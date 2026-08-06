@@ -1,0 +1,33 @@
+[Unit]
+Description=Codex CLI weekly limit watcher (Telegram notifier)
+Documentation=file:%h/projects/codex-limits-telegram/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/codex-limits-telegram
+ExecStart=%h/projects/codex-limits-telegram/target/release/codex-limits-telegram
+EnvironmentFile=%h/projects/codex-limits-telegram/.env
+
+# `codex` lives in a Homebrew prefix that a bare systemd --user PATH misses.
+Environment=PATH=/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin
+
+Restart=always
+RestartSec=60
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=codex-limits
+
+# Light hardening. The watcher only needs to read ~/.codex (via the
+# app-server it spawns) and write its own state file.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.local/state/codex-limits-telegram
+ReadWritePaths=%h/.codex
+
+[Install]
+WantedBy=default.target
