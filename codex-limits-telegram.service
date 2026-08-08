@@ -20,13 +20,18 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=codex-limits
 
-# Light hardening. The watcher only needs to read ~/.codex (via the
-# app-server it spawns) and write its own state file.
+# Creates (and exposes as $STATE_DIRECTORY) ~/.local/state/codex-limits-telegram
+# before the sandbox is built. ReadWritePaths= cannot be used for this: it
+# requires the directory to already exist, but the watcher only creates it on
+# its first save — the sandbox is set up first, so the unit could never start.
+StateDirectory=codex-limits-telegram
+
+# Light hardening. The watcher only needs ~/.codex (via the app-server it
+# spawns) and its own state directory.
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.local/state/codex-limits-telegram
 ReadWritePaths=%h/.codex
 
 [Install]

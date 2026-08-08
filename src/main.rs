@@ -81,13 +81,26 @@ impl Config {
         let chat_id = get("TELEGRAM_CHAT_ID")
             .ok_or("TELEGRAM_CHAT_ID is not set (checked environment and ./.env)")?;
 
-        let state_path = get("STATE_PATH").map(PathBuf::from).unwrap_or_else(|| {
-            let base = get("XDG_STATE_HOME")
-                .map(PathBuf::from)
-                .or_else(|| get("HOME").map(|h| PathBuf::from(h).join(".local/state")))
-                .unwrap_or_else(|| PathBuf::from("."));
-            base.join("codex-limits-telegram/state.json")
-        });
+        // `STATE_DIRECTORY` is set by systemd's StateDirectory=, which also
+        // creates the directory. Honouring it keeps the unit authoritative so
+        // the sandbox and the watcher can never disagree about the path.
+        let state_path = get("STATE_PATH")
+            .map(PathBuf::from)
+            .or_else(|| {
+                get("STATE_DIRECTORY")
+                    // systemd passes a colon-separated list; the first wins.
+                    .map(|d| {
+                        let first = d.split(':').next().unwrap_or(&d).to_string();
+                        PathBuf::from(first).join("state.json")
+                    })
+            })
+            .unwrap_or_else(|| {
+                let base = get("XDG_STATE_HOME")
+                    .map(PathBuf::from)
+                    .or_else(|| get("HOME").map(|h| PathBuf::from(h).join(".local/state")))
+                    .unwrap_or_else(|| PathBuf::from("."));
+                base.join("codex-limits-telegram/state.json")
+            });
 
         let interval = get("POLL_INTERVAL_SECS")
             .and_then(|v| v.parse::<u64>().ok())
